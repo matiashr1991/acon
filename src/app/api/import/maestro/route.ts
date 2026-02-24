@@ -107,15 +107,14 @@ export async function POST(request: Request) {
                 const sku = skuCellValue?.toString().trim()
                 const descripcion = descCellValue?.toString().trim()
 
-                // Normalizar barcode: 0, "0", "0.0", variantes vacías → null
-                let rawBarcode = barcodeCellValue?.toString().trim() || null
+                // Normalizar barcode: celda vacía o texto tipo 'no tiene' -> null
+                // Si la celda tiene 0 (numérico), se guarda como "0" (es un valor válido)
                 let barcode: string | null = null
-                if (rawBarcode) {
-                    const lower = rawBarcode.toLowerCase()
-                    const isNoBarcode = ['no tiene', 'no lleva', 'sin barras', 'no posee', 's/n', 'n/a', '-', '0', '0.0']
-                        .includes(lower)
-                    const isAllZeros = /^0+$/.test(rawBarcode) // "0000.." también es sin barcode
-                    barcode = (isNoBarcode || isAllZeros) ? null : rawBarcode
+                if (barcodeCellValue !== null && barcodeCellValue !== undefined && barcodeCellValue !== '') {
+                    const raw = barcodeCellValue.toString().trim()
+                    const lower = raw.toLowerCase()
+                    const isTextuallyEmpty = ['no tiene', 'no lleva', 'sin barras', 'no posee', 's/n', 'n/a', '-'].includes(lower)
+                    barcode = isTextuallyEmpty ? null : raw
                 }
 
                 if (!sku) throw new Error('SKU vacío')
