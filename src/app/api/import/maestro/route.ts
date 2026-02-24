@@ -106,10 +106,16 @@ export async function POST(request: Request) {
 
                 const sku = skuCellValue?.toString().trim()
                 const descripcion = descCellValue?.toString().trim()
-                let barcode = barcodeCellValue?.toString().trim() || null
 
-                if (barcode?.toLowerCase() === 'no tiene' || barcode?.toLowerCase() === 'no lleva') {
-                    barcode = null
+                // Normalizar barcode: 0, "0", "0.0", variantes vacías → null
+                let rawBarcode = barcodeCellValue?.toString().trim() || null
+                let barcode: string | null = null
+                if (rawBarcode) {
+                    const lower = rawBarcode.toLowerCase()
+                    const isNoBarcode = ['no tiene', 'no lleva', 'sin barras', 'no posee', 's/n', 'n/a', '-', '0', '0.0']
+                        .includes(lower)
+                    const isAllZeros = /^0+$/.test(rawBarcode) // "0000.." también es sin barcode
+                    barcode = (isNoBarcode || isAllZeros) ? null : rawBarcode
                 }
 
                 if (!sku) throw new Error('SKU vacío')
@@ -118,7 +124,7 @@ export async function POST(request: Request) {
 
                 let precio_compra = Number(ccCellValue)
                 if (isNaN(precio_compra) || precio_compra <= 0) {
-                    throw new Error(`Precio de compra inválido: ${ccCellValue}`)
+                    throw new Error(`Precio de compra inválido o cero: ${ccCellValue} (el SKU ${skuCellValue} no tiene precio asignado)`)
                 }
 
                 let bonif_total_decimal = crCellValue === null || crCellValue === '' ? 0 : Number(crCellValue)
