@@ -21,7 +21,7 @@ export async function GET(request: Request) {
         // 1. Obtener info del proveedor
         const { data: prov, error: provErr } = await supabase
             .from('proveedores')
-            .select('codigo, razon_social')
+            .select('codigo, razon_social, campos_plantilla')
             .eq('id', proveedor_id)
             .single()
 
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         // 2. Obtener precios
         let query = supabase
             .from('precios_compra')
-            .select('*, productos(descripcion, barcode)')
+            .select('*, productos(descripcion, barcode), vig_desde')
             .eq('proveedor_id', proveedor_id)
 
         if (mode === 'candidate' && job_id) {
@@ -240,8 +240,25 @@ export async function GET(request: Request) {
 
         const now = new Date()
         const timestamp = format(now, 'yyyyMMddHHmmss')
-        // Convertimos la vig_hasta de param ("YYYY-MM-DD" u otra) a "YYYYMMDD". Si no hay, usamos hoy.
-        const fec_vig = vig_hasta_param ? vig_hasta_param.replace(/-/g, '') : format(now, 'yyyyMMdd')
+
+        // Prioridad para FECVIG:
+        // 1. fecha_lista configurada en el proveedor (campos_plantilla.fecha_lista)
+        // 2. vig_desde del primer precio vigente
+        // 3. fecha actual
+        const fechaListaConfig = (prov as any).campos_plantilla?.fecha_lista
+        let fec_vig: string
+        if (fechaListaConfig) {
+            // viene como YYYY-MM-DD desde el date input
+            fec_vig = fechaListaConfig.replace(/-/g, '')
+        } else {
+            const vigDesdeFechas = precios
+                .map((p: any) => p.vig_desde)
+                .filter(Boolean)
+                .sort()
+                .reverse()
+            const vigDesdeRaw = vigDesdeFechas[0] || now.toISOString()
+            fec_vig = format(new Date(vigDesdeRaw), 'yyyyMMdd')
+        }
 
         const fileName = `${timestamp}_PRV-${prov.codigo}_FECVIG-${fec_vig}_plantillaPreciosCompra.xlsx`
 

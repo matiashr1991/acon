@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload, Download, CopyX, Search, Edit2, Play, Check } from 'lucide-react'
+import { ArrowLeft, Upload, Download, CopyX, Search, Edit2, Play, Check, Calendar } from 'lucide-react'
 
 export function ProveedorPanel({ proveedor }: { proveedor: any }) {
     const [activeTab, setActiveTab] = useState<'catalogo' | 'import'>('catalogo')
@@ -15,6 +15,33 @@ export function ProveedorPanel({ proveedor }: { proveedor: any }) {
     const [editingItem, setEditingItem] = useState<any>(null)
     const [editForm, setEditForm] = useState({ descripcion: '', precio_compra: '', bonif_total_pct: '' })
     const [savingEdit, setSavingEdit] = useState(false)
+
+    // Fecha de lista
+    const [fechaLista, setFechaLista] = useState<string>(proveedor.campos_plantilla?.fecha_lista || '')
+    const [editingFecha, setEditingFecha] = useState(false)
+    const [savingFecha, setSavingFecha] = useState(false)
+
+    const saveFechaLista = async (nuevaFecha: string) => {
+        setSavingFecha(true)
+        try {
+            const res = await fetch(`/api/proveedores/${proveedor.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    campos_plantilla: {
+                        ...proveedor.campos_plantilla,
+                        fecha_lista: nuevaFecha || null
+                    }
+                })
+            })
+            if (res.ok) {
+                setFechaLista(nuevaFecha)
+                setEditingFecha(false)
+            }
+        } finally {
+            setSavingFecha(false)
+        }
+    }
 
     // File Upload State
     const [file, setFile] = useState<File | null>(null)
@@ -164,7 +191,32 @@ export function ProveedorPanel({ proveedor }: { proveedor: any }) {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">{proveedor.razon_social}</h1>
-                        <p className="text-neutral-400 font-mono text-sm mt-1">{proveedor.codigo}</p>
+                        <p className="text-neutral-400 font-mono text-sm mt-0.5">{proveedor.codigo}</p>
+                        {/* Fecha de lista */}
+                        <div className="flex items-center gap-2 mt-1.5">
+                            <Calendar size={12} className="text-indigo-400 shrink-0" />
+                            {editingFecha ? (
+                                <form onSubmit={e => { e.preventDefault(); const fd = new FormData(e.currentTarget); saveFechaLista(fd.get('fl') as string) }} className="flex items-center gap-1.5">
+                                    <input
+                                        name="fl"
+                                        type="date"
+                                        defaultValue={fechaLista}
+                                        className="bg-neutral-800 border border-neutral-700 rounded px-2 py-0.5 text-xs text-white [color-scheme:dark] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                    />
+                                    <button type="submit" disabled={savingFecha} className="text-xs text-emerald-400 hover:text-emerald-300 font-medium">
+                                        {savingFecha ? '...' : 'OK'}
+                                    </button>
+                                    <button type="button" onClick={() => setEditingFecha(false)} className="text-xs text-neutral-500 hover:text-neutral-300">✕</button>
+                                </form>
+                            ) : (
+                                <button onClick={() => setEditingFecha(true)} className="flex items-center gap-1 text-xs text-neutral-500 hover:text-indigo-400 transition-colors group">
+                                    <span className="font-mono">
+                                        {fechaLista ? `FECVIG: ${fechaLista}` : 'Sin fecha de lista'}
+                                    </span>
+                                    <Edit2 size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
