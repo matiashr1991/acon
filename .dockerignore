@@ -1,0 +1,14 @@
+.git
+.next
+node_modules
+*.log
+.env*.local
+.env.development
+README.md
+Dockerfile
+docker-compose*.yml
+.dockerignore
+fix.ts
+test-*.js
+test-*.ts
+supabase_schema.sql

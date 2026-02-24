@@ -1,0 +1,27 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Estas variables se leen del .env al momento de hacer docker compose build
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: sistemacoso-precios:latest
+    container_name: sistemacoso-precios
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # Runtime env vars (server-side, no expuestas al browser)
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      TEMPLATE_PATH: ${TEMPLATE_PATH:-/app/public/assets/plantillas/plantillaPreciosCompra.xlsx}
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "-qO-", "http://localhost:3000/api/proveedores" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
