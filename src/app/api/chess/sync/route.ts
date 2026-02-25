@@ -104,6 +104,18 @@ function normalizeLine(item: any, runId: string) {
     }
 }
 
+async function insertBatch(supabase: any, table: string, rows: any[]) {
+    if (rows.length === 0) return []
+    const CHUNK = 200
+    const errors: string[] = []
+    for (let i = 0; i < rows.length; i += CHUNK) {
+        const chunk = rows.slice(i, i + CHUNK)
+        const { error } = await supabase.from(table).insert(chunk)
+        if (error) errors.push(error.message)
+    }
+    return errors
+}
+
 async function upsertBatch(supabase: any, table: string, rows: any[], onConflict: string) {
     if (rows.length === 0) return
     const CHUNK = 100
@@ -180,7 +192,10 @@ export async function POST(request: Request) {
             if (items.length === 0) break
             lines.push(...items.map(i => normalizeLine(i, runId)))
         }
-        await upsertBatch(supabase, 'chess_sales_lines', lines, 'id_empresa,id_documento,letra,serie,nrodoc,id_articulo')
+        // Limpiar líneas anteriores del período y hacer INSERT limpio
+        await supabase.from('chess_sales_lines').delete().gte('id', 0)
+        const lineErrors = await insertBatch(supabase, 'chess_sales_lines', lines)
+        if (lineErrors.length > 0) counts.errors.push(...lineErrors.slice(0, 5))
         counts.lines = lines.length
 
         // ── 3) STOCK ─────────────────────────────────────────────────────────
