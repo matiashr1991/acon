@@ -180,7 +180,7 @@ export async function POST(request: Request) {
             if (items.length === 0) break
             lines.push(...items.map(i => normalizeLine(i, runId)))
         }
-        await upsertBatch(supabase, 'chess_sales_lines', lines, 'id_empresa,id_documento,letra,serie,nrodoc,id_linea,id_articulo')
+        await upsertBatch(supabase, 'chess_sales_lines', lines, 'id_empresa,id_documento,letra,serie,nrodoc,id_articulo')
         counts.lines = lines.length
 
         // ── 3) STOCK ─────────────────────────────────────────────────────────
