@@ -12,7 +12,7 @@ export async function GET(request: Request) {
             *,
             proveedores(razon_social, codigo),
             negociacion_conceptos(credito_generado),
-            negociacion_liquidaciones(monto)
+            negociacion_liquidaciones(monto, fecha)
         `)
         .order('created_at', { ascending: false })
 
