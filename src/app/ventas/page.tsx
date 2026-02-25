@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { RefreshCw, Download, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, BarChart2 } from 'lucide-react'
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -221,13 +221,43 @@ function HeadersTable({ desde, hasta }: { desde: string; hasta: string }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 
+const SYNC_STEPS = [
+    { label: 'Conectando a Chess ERP...', pct: 8 },
+    { label: 'Autenticando sesión...', pct: 15 },
+    { label: 'Descargando comprobantes (resumen)...', pct: 35 },
+    { label: 'Descargando líneas de artículos...', pct: 60 },
+    { label: 'Sincronizando stock...', pct: 78 },
+    { label: 'Guardando en base de datos...', pct: 88 },
+    { label: 'Verificando registros...', pct: 95 },
+]
+
 export default function VentasPage() {
     const [desde, setDesde] = useState(monthAgo())
     const [hasta, setHasta] = useState(today())
     const [summary, setSummary] = useState<any>(null)
     const [syncing, setSyncing] = useState(false)
+    const [syncStep, setSyncStep] = useState(0)
+    const [syncPct, setSyncPct] = useState(0)
     const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null)
     const [loadingSummary, setLoadingSummary] = useState(false)
+    const stepRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+    useEffect(() => {
+        if (syncing) {
+            setSyncStep(0)
+            setSyncPct(SYNC_STEPS[0].pct)
+            let idx = 0
+            stepRef.current = setInterval(() => {
+                idx = Math.min(idx + 1, SYNC_STEPS.length - 1)
+                setSyncStep(idx)
+                setSyncPct(SYNC_STEPS[idx].pct)
+            }, 6000)
+        } else {
+            if (stepRef.current) clearInterval(stepRef.current)
+            stepRef.current = null
+        }
+        return () => { if (stepRef.current) clearInterval(stepRef.current) }
+    }, [syncing])
 
     const loadSummary = useCallback(async (d: string, h: string) => {
         setLoadingSummary(true)
@@ -240,10 +270,12 @@ export default function VentasPage() {
     const runSync = async () => {
         setSyncing(true)
         setSyncMsg(null)
+        setSyncPct(0)
         try {
             const res = await fetch(`/api/chess/sync?desde=${desde}&hasta=${hasta}`, { method: 'POST' })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Error desconocido')
+            setSyncPct(100)
             setSyncMsg({ ok: true, text: `Sync OK · ${data.counts?.headers || 0} cabeceras · ${data.counts?.lines || 0} líneas` })
             await loadSummary(desde, hasta)
         } catch (e: any) {
@@ -297,11 +329,30 @@ export default function VentasPage() {
                         Ver datos
                     </button>
                     <button onClick={runSync} disabled={syncing}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                         <Download size={14} className={syncing ? 'animate-bounce' : ''} />
                         {syncing ? 'Sincronizando...' : 'Sincronizar con ERP'}
                     </button>
                 </div>
+
+                {/* Barra de progreso del sync */}
+                {syncing && (
+                    <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between text-xs text-neutral-400">
+                            <span className="flex items-center gap-2">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                                {SYNC_STEPS[syncStep]?.label}
+                            </span>
+                            <span className="font-mono text-neutral-600">{syncPct}%</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                            <div
+                                className="bg-gradient-to-r from-indigo-600 to-indigo-400 h-1.5 rounded-full transition-all duration-[3000ms] ease-out"
+                                style={{ width: `${syncPct}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {syncMsg && (
                     <div className={`mt-3 flex items-center gap-2 text-sm px-3 py-2 rounded-lg ${syncMsg.ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
