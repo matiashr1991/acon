@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Package, FileSpreadsheet, Settings, LayoutGrid, History, Handshake } from 'lucide-react'
+import { Home, Package, FileSpreadsheet, Settings, LayoutGrid, History, Handshake, BarChart2 } from 'lucide-react'
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -13,6 +13,7 @@ export function Sidebar() {
         { name: 'Proveedores', href: '/proveedores', icon: Package },
         { name: 'Catálogo Global', href: '/catalogo', icon: LayoutGrid },
         { name: 'Historial', href: '/historial', icon: History },
+        { name: 'Ventas', href: '/ventas', icon: BarChart2 },
         { name: 'Negociaciones', href: '/negociaciones', icon: Handshake },
         { name: 'Importar Múltiple', href: '/import', icon: FileSpreadsheet },
         { name: 'Ajustes', href: '/settings', icon: Settings },
