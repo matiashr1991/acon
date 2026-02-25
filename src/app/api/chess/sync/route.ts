@@ -34,6 +34,9 @@ async function chessGet(cookie: string, path: string) {
 
 function extractItems(data: any): any[] {
     if (Array.isArray(data)) return data
+    // Chess ERP: { dsReporteComprobantesApi: { VentasResumen: [...] } }
+    if (data?.dsReporteComprobantesApi?.VentasResumen && Array.isArray(data.dsReporteComprobantesApi.VentasResumen))
+        return data.dsReporteComprobantesApi.VentasResumen
     if (data && Array.isArray(data.dsReporteComprobantesApi)) return data.dsReporteComprobantesApi
     if (data && Array.isArray(data.items)) return data.items
     if (data && Array.isArray(data.data)) return data.data
