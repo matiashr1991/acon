@@ -28,12 +28,22 @@ export async function GET(request: Request) {
         hdrMap.set(k, h)
     }
 
-    // 3) Líneas — traemos todas y filtramos por las cabeceras del período
-    const { data: lines } = await supabase
-        .from('chess_sales_lines')
-        .select('*')
+    // 2) Líneas — paginado para superar el límite de 1000 filas de PostgREST
+    const PAGE = 5000
+    const allLines: any[] = []
+    let offset = 0
+    while (true) {
+        const { data: chunk } = await supabase
+            .from('chess_sales_lines')
+            .select('*')
+            .range(offset, offset + PAGE - 1)
+        if (!chunk || chunk.length === 0) break
+        allLines.push(...chunk)
+        if (chunk.length < PAGE) break
+        offset += PAGE
+    }
 
-    const lns = (lines || []).filter(l => {
+    const lns = allLines.filter(l => {
         const k = `${l.id_empresa}|${l.id_documento}|${l.letra}|${l.serie}|${l.nrodoc}`
         return hdrMap.has(k)
     })
