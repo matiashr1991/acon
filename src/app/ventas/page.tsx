@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { RefreshCw, Download, X, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, BarChart2 } from 'lucide-react'
+import { RefreshCw, Download, X, AlertCircle, CheckCircle2, BarChart2, FileSpreadsheet } from 'lucide-react'
 import { format, subDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -236,6 +236,7 @@ export default function VentasPage() {
     const [hasta, setHasta] = useState(today())
     const [summary, setSummary] = useState<any>(null)
     const [syncing, setSyncing] = useState(false)
+    const [exporting, setExporting] = useState(false)
     const [syncStep, setSyncStep] = useState(0)
     const [syncPct, setSyncPct] = useState(0)
     const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null)
@@ -286,6 +287,22 @@ export default function VentasPage() {
 
     const applyRange = () => loadSummary(desde, hasta)
 
+    const downloadExcel = async () => {
+        setExporting(true)
+        try {
+            const res = await fetch(`/api/chess/export?desde=${desde}&hasta=${hasta}`)
+            if (!res.ok) throw new Error('Error al generar el Excel')
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `ventas_${desde}_${hasta}.xlsx`
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch (e) { console.error(e) }
+        setExporting(false)
+    }
+
     const totals = summary?.totals
     const lastRun = summary?.last_run
     const byTipoPago = summary?.by_tipo_pago || []
@@ -328,10 +345,15 @@ export default function VentasPage() {
                         <RefreshCw size={14} className={loadingSummary ? 'animate-spin' : ''} />
                         Ver datos
                     </button>
-                    <button onClick={runSync} disabled={syncing}
+                    <button onClick={runSync} disabled={syncing || exporting}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                         <Download size={14} className={syncing ? 'animate-bounce' : ''} />
                         {syncing ? 'Sincronizando...' : 'Sincronizar con ERP'}
+                    </button>
+                    <button onClick={downloadExcel} disabled={exporting || syncing}
+                        className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-60 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <FileSpreadsheet size={14} className={exporting ? 'animate-spin' : ''} />
+                        {exporting ? 'Generando...' : 'Exportar Excel'}
                     </button>
                 </div>
 
