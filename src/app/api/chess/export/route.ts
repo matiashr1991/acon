@@ -28,8 +28,8 @@ export async function GET(request: Request) {
         hdrMap.set(k, h)
     }
 
-    // 2) Líneas — paginado para superar el límite de 1000 filas de PostgREST
-    const PAGE = 5000
+    // 2) Líneas — paginado para superar el límite de rows de PostgREST
+    const PAGE = 1000
     const allLines: any[] = []
     let offset = 0
     while (true) {
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         if (!chunk || chunk.length === 0) break
         allLines.push(...chunk)
         if (chunk.length < PAGE) break
-        offset += PAGE
+        offset += chunk.length  // avanzar exactamente lo que Supabase devolvió
     }
 
     const lns = allLines.filter(l => {
