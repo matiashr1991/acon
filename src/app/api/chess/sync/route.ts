@@ -34,6 +34,7 @@ async function chessGet(cookie: string, path: string) {
 
 function extractItems(data: any): any[] {
     if (Array.isArray(data)) return data
+    if (data && Array.isArray(data.dsReporteComprobantesApi)) return data.dsReporteComprobantesApi
     if (data && Array.isArray(data.items)) return data.items
     if (data && Array.isArray(data.data)) return data.data
     if (data && Array.isArray(data.ventas)) return data.ventas
