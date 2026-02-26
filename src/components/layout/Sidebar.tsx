@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Package, FileSpreadsheet, Settings, LayoutGrid, History, Handshake } from 'lucide-react'
+import { Home, Package, FileSpreadsheet, Settings, LayoutGrid, History, Handshake, GitMerge } from 'lucide-react'
 
 export function Sidebar() {
     const pathname = usePathname()
@@ -14,7 +14,8 @@ export function Sidebar() {
         { name: 'Catálogo Global', href: '/catalogo', icon: LayoutGrid },
         { name: 'Historial', href: '/historial', icon: History },
         { name: 'Negociaciones', href: '/negociaciones', icon: Handshake },
-        { name: 'Importar Múltiple', href: '/import', icon: FileSpreadsheet },
+        { name: 'Gestor Excel', href: '/importador', icon: FileSpreadsheet },
+        { name: 'Cruce Proveedor', href: '/cruce-proveedor', icon: GitMerge },
         { name: 'Ajustes', href: '/settings', icon: Settings },
     ]
 
